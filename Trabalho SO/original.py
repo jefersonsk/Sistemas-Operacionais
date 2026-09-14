@@ -132,7 +132,6 @@ def FCFS(execucao, espera, restante, chegada):
 
         if tempo_execucao[processo_em_execucao] == tempo_restante[processo_em_execucao]:
             tempo_espera[processo_em_execucao] = i - 1
-            print(tempo_espera)
         if tempo_restante[processo_em_execucao] == 1:
             if processo_em_execucao == (n_processos - 1):
                 break
