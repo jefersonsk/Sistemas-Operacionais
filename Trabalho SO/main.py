@@ -102,6 +102,13 @@ def imprime_status(tempos_de_espera):
     print(f"Tempo medio de espera: {media_espera}")
 
 
+def imprimir_cabecalho():
+    print("=" * 40)
+    print("TRABALHO SISTEMAS OPERACIONAIS".center(40))
+    print("Algoritmos de Escalonamento".center(40))
+    print("=" * 40)
+
+
 def fcfs(lista):
     tempo = 0
     tempo_de_espera = 0
@@ -133,6 +140,8 @@ def fcfs(lista):
 
 
 def main():
+    imprimir_cabecalho()
+
     processos_criados = fornecer_informacoes()
 
     while True:
@@ -158,4 +167,5 @@ def main():
             break
 
 
-main()
+if __name__ == "__main__":
+    main()
