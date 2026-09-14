@@ -1,7 +1,7 @@
 import random
 
 MAXIMO_TEMPO_EXECUCAO = 65535
-numero_processos = 2
+numero_processos = 0
 
 
 class Processo:
@@ -45,15 +45,17 @@ class Processo:
                 )
 
 
-def fornecer_informacoes(numero_de_processos):
-    processos = []
+def fornecer_informacoes():
+    processos_gerados = []
 
+    numero_processos = int(input("Digite o número de processos desejados: "))
     escolha = input("Gerar dados automáticos [S ou N]? ")
 
     if escolha.upper() == "S":
-        processos = Processo.popular_processo_automatico(numero_de_processos)
+        processos_gerados = Processo.popular_processo_automatico(
+            numero_processos)
     else:
-        for i in range(numero_de_processos):
+        for i in range(numero_processos):
             numero_processo = i
             tempo_execucao = int(
                 input(f"Digite tempo de execução do processo[{i}]: "))
@@ -64,7 +66,7 @@ def fornecer_informacoes(numero_de_processos):
             tempo_restante = tempo_execucao
             tempo_espera = 0
 
-            processos.append(Processo(
+            processos_gerados.append(Processo(
                 numero_processo,
                 tempo_execucao,
                 tempo_espera,
@@ -73,7 +75,14 @@ def fornecer_informacoes(numero_de_processos):
                 prioridade)
             )
 
-    return processos
+    imprimir_processos(processos_gerados)
+
+    return processos_gerados
+
+
+def imprimir_processos(lista):
+    for processo in lista:
+        print(processo)
 
 
 def imprime_status(tempos_de_espera):
@@ -111,9 +120,6 @@ def fcfs(lista):
                 f"restante={tempo_restante}"
             )
 
-            # if tempo_execucao == tempo_restante:
-            #     tempo_espera = passo - 1
-
             tempo_de_espera += 1
 
             if tempo_restante == 1:
@@ -126,11 +132,30 @@ def fcfs(lista):
     imprime_status(lista_tempos_espera)
 
 
-processos_criados = fornecer_informacoes(2)
+def main():
+    processos_criados = fornecer_informacoes()
 
-for i in processos_criados:
-    print(i)
+    while True:
+        escolha_algoritmo = int(input(
+            "Escolha o algoritmo: [1=FCFS "
+            "2=SJF Preemptivo "
+            "3=SJF Não Preemptivo "
+            "4=Prioridade Preemptivo "
+            "5=Prioridadde Não Preemptivo "
+            "6=Round Robin "
+            "7=Imprime lista de processos "
+            "8=Popular processos novamente "
+            "9=Sair]: "
+        ))
 
-# imprime_status(processos_criados)
+        if escolha_algoritmo == 1:
+            fcfs(processos_criados)
+        elif escolha_algoritmo == 7:
+            imprimir_processos(processos_criados)
+        elif escolha_algoritmo == 8:
+            processos_criados = fornecer_informacoes()
+        elif escolha_algoritmo == 9:
+            break
 
-fcfs(processos_criados)
+
+main()
