@@ -1,7 +1,7 @@
 import random
 
 MAXIMO_TEMPO_EXECUCAO = 65535
-numero_processos = 1
+numero_processos = 2
 
 
 class Processo:
@@ -76,19 +76,54 @@ def fornecer_informacoes(numero_de_processos):
     return processos
 
 
-def imprime_status(lista):
+def imprime_status(tempos_de_espera):
     tempo_espera_total = 0
-    numero_processos = len(lista)
-    media
+    numero_processos = len(tempos_de_espera)
+    media_espera = 0
 
-    for dados in lista:
+    for processo in range(numero_processos):
         print(
-            f"Processo[{dados.numero_processo}]: "
-            f"tempo_espera={dados.tempo_espera}"
+            f"Processo[{processo}]: "
+            f"tempo_espera={tempos_de_espera[processo]}"
         )
-        tempo_espera_total += dados.tempo_espera
+        tempo_espera_total += tempos_de_espera[processo]
 
-    print
+    media_espera = tempo_espera_total / numero_processos
+
+    print(f"Tempo medio de espera: {media_espera}")
+
+
+def fcfs(lista):
+    tempo = 0
+    tempo_de_espera = 0
+    lista_tempos_espera = []
+
+    for processo in lista:
+        processo_em_execucao = processo.numero_processo
+        tempo_restante = processo.tempo_restante
+
+        tempo += 1
+        lista_tempos_espera.append(tempo_de_espera)
+
+        for passo in range(1, MAXIMO_TEMPO_EXECUCAO):
+            print(
+                f"tempo[{tempo}]: processo[{processo_em_execucao}] "
+                f"restante={tempo_restante}"
+            )
+
+            # if tempo_execucao == tempo_restante:
+            #     tempo_espera = passo - 1
+
+            tempo_de_espera += 1
+
+            if tempo_restante == 1:
+                break
+            else:
+                tempo_restante -= 1
+
+            tempo += 1
+
+    imprime_status(lista_tempos_espera)
 
 
 processos_criados = fornecer_informacoes(2)
@@ -96,4 +131,6 @@ processos_criados = fornecer_informacoes(2)
 for i in processos_criados:
     print(i)
 
-imprime_status(processos_criados)
+# imprime_status(processos_criados)
+
+fcfs(processos_criados)
