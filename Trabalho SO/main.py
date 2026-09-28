@@ -5,13 +5,38 @@ numero_processos = 0
 
 
 class Processo:
-    def __init__(self, numero_processo, tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade):
+    def __init__(self,
+                 numero_processo,
+                 tempo_execucao,
+                 tempo_espera,
+                 tempo_restante,
+                 tempo_chegada,
+                 prioridade
+                 ):
         self.numero_processo = numero_processo
         self.tempo_execucao = tempo_execucao
         self.tempo_espera = tempo_espera
         self.tempo_restante = tempo_restante
         self.tempo_chegada = tempo_chegada
         self.prioridade = prioridade
+
+    def executar_um_ciclo(self):
+        self.tempo_restante -= 1
+
+    def esta_finalizado(self):
+        return self.tempo_restante <= 0
+
+    def __str__(self):
+        return (f"Processo[{self.numero_processo}]: "
+                f"tempo_execucao={self.tempo_execucao} "
+                f"tempo_restante={self.tempo_restante} "
+                f"tempo_chegada={self.tempo_chegada} "
+                f"prioridade={self.prioridade}"
+                )
+
+    def resetar(self):
+        self.tempo_restante = self.tempo_execucao
+        self.tempo_espera = 0
 
     @staticmethod
     def popular_processo_automatico(numero_de_processos):
@@ -36,13 +61,229 @@ class Processo:
 
         return lista_processos
 
-    def __str__(self):
-        return (f"Processo[{self.numero_processo}]: "
-                f"tempo_execucao={self.tempo_execucao} "
-                f"tempo_restante={self.tempo_restante} "
-                f"tempo_chegada={self.tempo_chegada} "
-                f"prioridade={self.prioridade}"
+
+class GerenciadorDeFilas:
+    def __init__(self):
+        self.fila = []
+        self.tempo_sistema = 0
+
+    def adicionar_processo(self, processo):
+        processo.resetar()
+        self.fila.append(processo)
+
+    def executar_ciclo_cpu(self, processo_em_execucao):
+        self.tempo_sistema += 1
+        auxiliar_tempo = processo_em_execucao.tempo_restante
+
+        processo_em_execucao.executar_um_ciclo()
+
+        return {
+            "tempo": self.tempo_sistema,
+            "processo": processo_em_execucao.numero_processo,
+            "restante": auxiliar_tempo
+        }
+
+    def executar_fcfs(self):
+        historico = []
+        linha_do_tempo = []
+
+        for processo in self.fila:
+
+            tempo_espera = self.tempo_sistema
+
+            while not processo.esta_finalizado():
+                linha_do_tempo.append(self.executar_ciclo_cpu(processo))
+
+            historico.append({
+                "processo": processo,
+                "tempo_espera": tempo_espera
+            })
+
+        return {"linha_do_tempo": linha_do_tempo,
+                "metricas_processos": historico
+                }
+
+    def executar_sjf_nao_preemptivo(self):
+        historico = []
+        linha_do_tempo = []
+        tempo_ocioso = 0
+
+        while self.fila:
+            processos_disponiveis = [
+                processo for processo in self.fila if
+                processo.tempo_chegada <= self.tempo_sistema
+            ]
+
+            if processos_disponiveis:
+                processo_atual = min(
+                    processos_disponiveis,
+                    key=lambda processo: processo.tempo_execucao
                 )
+
+                tempo_espera = (self.tempo_sistema -
+                                processo_atual.tempo_chegada
+                                )
+
+                while not processo_atual.esta_finalizado():
+                    linha_do_tempo.append(
+                        self.executar_ciclo_cpu(processo_atual)
+                    )
+
+                historico.append(
+                    {"processo": processo_atual,
+                     "tempo_espera": tempo_espera}
+                )
+
+                self.fila.remove(processo_atual)
+            else:
+                self.tempo_sistema += 1
+                tempo_ocioso += 1
+                linha_do_tempo.append({"tempo": self.tempo_sistema,
+                                       "processo": "ocioso",
+                                       "restante": "-"}
+                                      )
+
+        return {"linha_do_tempo": linha_do_tempo,
+                "metricas_processos": historico,
+                "tempo_ocioso": tempo_ocioso
+                }
+
+    def executar_sjf_preemptivo(self):
+        historico = []
+        linha_do_tempo = []
+        tempo_ocioso = 0
+
+        while self.fila:
+            processos_disponiveis = [
+                processo for processo in self.fila if
+                processo.tempo_chegada <= self.tempo_sistema
+            ]
+
+            if processos_disponiveis:
+                processo_atual = min(
+                    processos_disponiveis,
+                    key=lambda processo: processo.tempo_restante
+                )
+
+                linha_do_tempo.append(
+                    self.executar_ciclo_cpu(processo_atual)
+                )
+
+                if processo_atual.esta_finalizado():
+
+                    tempo_espera = (self.tempo_sistema -
+                                    processo_atual.tempo_chegada -
+                                    processo_atual.tempo_execucao
+                                    )
+
+                    historico.append(
+                        {"processo": processo_atual,
+                         "tempo_espera": tempo_espera}
+                    )
+
+                    self.fila.remove(processo_atual)
+            else:
+                self.tempo_sistema += 1
+                tempo_ocioso += 1
+                linha_do_tempo.append({"tempo": self.tempo_sistema,
+                                       "processo": "ocioso",
+                                       "restante": "-"}
+                                      )
+
+        return {"linha_do_tempo": linha_do_tempo,
+                "metricas_processos": historico,
+                "tempo_ocioso": tempo_ocioso}
+
+    def executar_prioridade_nao_preemptivo(self):
+        historico = []
+        linha_do_tempo = []
+        tempo_ocioso = 0
+
+        while self.fila:
+            processos_disponiveis = [
+                processo for processo in self.fila if
+                processo.tempo_chegada <= self.tempo_sistema
+            ]
+
+            if processos_disponiveis:
+                processo_atual = min(
+                    processos_disponiveis,
+                    key=lambda processo: processo.prioridade
+                )
+
+                tempo_espera = (self.tempo_sistema -
+                                processo_atual.tempo_chegada
+                                )
+
+                while not processo_atual.esta_finalizado():
+                    linha_do_tempo.append(
+                        self.executar_ciclo_cpu(processo_atual)
+                    )
+
+                historico.append(
+                    {"processo": processo_atual,
+                     "tempo_espera": tempo_espera}
+                )
+
+                self.fila.remove(processo_atual)
+            else:
+                self.tempo_sistema += 1
+                tempo_ocioso += 1
+                linha_do_tempo.append({"tempo": self.tempo_sistema,
+                                       "processo": "ocioso",
+                                       "restante": "-"}
+                                      )
+
+        return {"linha_do_tempo": linha_do_tempo,
+                "metricas_processos": historico,
+                "tempo_ocioso": tempo_ocioso
+                }
+
+    def executar_prioridade_preemptivo(self):
+        historico = []
+        linha_do_tempo = []
+        tempo_ocioso = 0
+
+        while self.fila:
+            processos_disponiveis = [
+                processo for processo in self.fila if
+                processo.tempo_chegada <= self.tempo_sistema
+            ]
+
+            if processos_disponiveis:
+                processo_atual = min(
+                    processos_disponiveis,
+                    key=lambda processo: processo.prioridade
+                )
+
+                linha_do_tempo.append(
+                    self.executar_ciclo_cpu(processo_atual)
+                )
+
+                if processo_atual.esta_finalizado():
+
+                    tempo_espera = (self.tempo_sistema -
+                                    processo_atual.tempo_chegada -
+                                    processo_atual.tempo_execucao
+                                    )
+
+                    historico.append(
+                        {"processo": processo_atual,
+                         "tempo_espera": tempo_espera}
+                    )
+
+                    self.fila.remove(processo_atual)
+            else:
+                self.tempo_sistema += 1
+                tempo_ocioso += 1
+                linha_do_tempo.append({"tempo": self.tempo_sistema,
+                                       "processo": "ocioso",
+                                       "restante": "-"}
+                                      )
+
+        return {"linha_do_tempo": linha_do_tempo,
+                "metricas_processos": historico,
+                "tempo_ocioso": tempo_ocioso}
 
 
 def fornecer_informacoes():
@@ -85,23 +326,6 @@ def imprimir_processos(lista):
         print(processo)
 
 
-def imprime_status(tempos_de_espera):
-    tempo_espera_total = 0
-    numero_processos = len(tempos_de_espera)
-    media_espera = 0
-
-    for processo in range(numero_processos):
-        print(
-            f"Processo[{processo}]: "
-            f"tempo_espera={tempos_de_espera[processo]}"
-        )
-        tempo_espera_total += tempos_de_espera[processo]
-
-    media_espera = tempo_espera_total / numero_processos
-
-    print(f"Tempo medio de espera: {media_espera}")
-
-
 def imprimir_cabecalho():
     print("=" * 40)
     print("TRABALHO SISTEMAS OPERACIONAIS".center(40))
@@ -109,34 +333,44 @@ def imprimir_cabecalho():
     print("=" * 40)
 
 
-def fcfs(lista):
-    tempo = 0
-    tempo_de_espera = 0
-    lista_tempos_espera = []
+def executar_algoritmo(metodo_algoritmo, lista_processos):
+    copia_processos = lista_processos.copy()
 
-    for processo in lista:
-        processo_em_execucao = processo.numero_processo
-        tempo_restante = processo.tempo_restante
+    gerenciador = GerenciadorDeFilas()
 
-        tempo += 1
-        lista_tempos_espera.append(tempo_de_espera)
+    for dados in copia_processos:
+        gerenciador.adicionar_processo(dados)
 
-        for passo in range(1, MAXIMO_TEMPO_EXECUCAO):
-            print(
-                f"tempo[{tempo}]: processo[{processo_em_execucao}] "
-                f"restante={tempo_restante}"
-            )
+    resultados = metodo_algoritmo(gerenciador)
 
-            tempo_de_espera += 1
+    imprimir_resultados(resultados)
 
-            if tempo_restante == 1:
-                break
-            else:
-                tempo_restante -= 1
 
-            tempo += 1
+def imprimir_resultados(dados):
+    if dados["linha_do_tempo"]:
+        for informacoes in dados["linha_do_tempo"]:
+            print(f"tempo[{informacoes['tempo']}]: "
+                  f"processo[{informacoes['processo']}] "
+                  f"restante={informacoes['restante']}"
+                  )
 
-    imprime_status(lista_tempos_espera)
+    if dados["metricas_processos"]:
+        soma_espera = 0
+        for informacoes in dados["metricas_processos"]:
+            informacao_processo = informacoes["processo"]
+            informacao_espera = informacoes["tempo_espera"]
+            soma_espera += informacao_espera
+            print(f"Processo[{informacao_processo.numero_processo}] "
+                  f"tempo espera={informacao_espera}"
+                  )
+
+        numero_processos = len(dados["metricas_processos"])
+        media_espera = soma_espera / numero_processos
+        print(f"Tempo médio de espera: {media_espera:.2f}")
+
+    if "tempo_ocioso" in dados:
+        tempo_ocioso = dados["tempo_ocioso"]
+        print(f"Tempo total ocioso da CPU={tempo_ocioso}")
 
 
 def main():
@@ -158,7 +392,31 @@ def main():
         ))
 
         if escolha_algoritmo == 1:
-            fcfs(processos_criados)
+            executar_algoritmo(
+                GerenciadorDeFilas.executar_fcfs,
+                processos_criados
+            )
+        elif escolha_algoritmo == 2:
+            executar_algoritmo(
+                GerenciadorDeFilas.executar_sjf_preemptivo,
+                processos_criados
+            )
+        elif escolha_algoritmo == 3:
+            executar_algoritmo(
+                GerenciadorDeFilas.executar_sjf_nao_preemptivo,
+                processos_criados
+            )
+        elif escolha_algoritmo == 4:
+            executar_algoritmo(
+                GerenciadorDeFilas.executar_prioridade_preemptivo,
+                processos_criados
+            )
+        elif escolha_algoritmo == 5:
+            executar_algoritmo(
+                GerenciadorDeFilas.executar_prioridade_nao_preemptivo,
+                processos_criados
+            )
+
         elif escolha_algoritmo == 7:
             imprimir_processos(processos_criados)
         elif escolha_algoritmo == 8:
