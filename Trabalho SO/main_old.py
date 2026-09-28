@@ -1,0 +1,176 @@
+import random
+
+MAXIMO_TEMPO_EXECUCAO = 65535
+numero_processos = 0
+
+
+class Processo:
+    def __init__(self, numero_processo, tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade):
+        self.numero_processo = numero_processo
+        self.tempo_execucao = tempo_execucao
+        self.tempo_espera = tempo_espera
+        self.tempo_restante = tempo_restante
+        self.tempo_chegada = tempo_chegada
+        self.prioridade = prioridade
+
+    @staticmethod
+    def popular_processo_automatico(numero_de_processos):
+        lista_processos = []
+
+        for i in range(numero_de_processos):
+            numero_processo = i
+            tempo_execucao = random.randint(1, 10)
+            tempo_espera = 0
+            tempo_restante = tempo_execucao
+            tempo_chegada = random.randint(1, 10)
+            prioridade = random.randint(1, 15)
+
+            lista_processos.append(
+                Processo(numero_processo,
+                         tempo_execucao,
+                         tempo_espera,
+                         tempo_restante,
+                         tempo_chegada,
+                         prioridade
+                         ))
+
+        return lista_processos
+
+    def __str__(self):
+        return (f"Processo[{self.numero_processo}]: "
+                f"tempo_execucao={self.tempo_execucao} "
+                f"tempo_restante={self.tempo_restante} "
+                f"tempo_chegada={self.tempo_chegada} "
+                f"prioridade={self.prioridade}"
+                )
+
+
+def fornecer_informacoes():
+    processos_gerados = []
+
+    numero_processos = int(input("Digite o número de processos desejados: "))
+    escolha = input("Gerar dados automáticos [S ou N]? ")
+
+    if escolha.upper() == "S":
+        processos_gerados = Processo.popular_processo_automatico(
+            numero_processos)
+    else:
+        for i in range(numero_processos):
+            numero_processo = i
+            tempo_execucao = int(
+                input(f"Digite tempo de execução do processo[{i}]: "))
+            tempo_chegada = int(
+                input(f"Digite tempo de chegada do processo[{i}]: "))
+            prioridade = int(
+                input(f"Digite a prioridade do processo[{i}]: "))
+            tempo_restante = tempo_execucao
+            tempo_espera = 0
+
+            processos_gerados.append(Processo(
+                numero_processo,
+                tempo_execucao,
+                tempo_espera,
+                tempo_restante,
+                tempo_chegada,
+                prioridade)
+            )
+
+    imprimir_processos(processos_gerados)
+
+    return processos_gerados
+
+
+def imprimir_processos(lista):
+    for processo in lista:
+        print(processo)
+
+
+def imprime_status(tempos_de_espera):
+    tempo_espera_total = 0
+    numero_processos = len(tempos_de_espera)
+    media_espera = 0
+
+    for processo in range(numero_processos):
+        print(
+            f"Processo[{processo}]: "
+            f"tempo_espera={tempos_de_espera[processo]}"
+        )
+        tempo_espera_total += tempos_de_espera[processo]
+
+    media_espera = tempo_espera_total / numero_processos
+
+    print(f"Tempo medio de espera: {media_espera}")
+
+
+def imprimir_cabecalho():
+    print("=" * 40)
+    print("TRABALHO SISTEMAS OPERACIONAIS".center(40))
+    print("Algoritmos de Escalonamento".center(40))
+    print("=" * 40)
+
+
+def fcfs(lista):
+    tempo = 0
+    tempo_de_espera = 0
+    lista_tempos_espera = []
+
+    for processo in lista:
+        processo_em_execucao = processo.numero_processo
+        tempo_restante = processo.tempo_restante
+
+        tempo += 1
+        lista_tempos_espera.append(tempo_de_espera)
+
+        for passo in range(1, MAXIMO_TEMPO_EXECUCAO):
+            print(
+                f"tempo[{tempo}]: processo[{processo_em_execucao}] "
+                f"restante={tempo_restante}"
+            )
+
+            tempo_de_espera += 1
+
+            if tempo_restante == 1:
+                break
+            else:
+                tempo_restante -= 1
+
+            tempo += 1
+
+    imprime_status(lista_tempos_espera)
+
+
+def sjf(lista):
+    ordenacao_menor_tempo_execucao = []
+    menor_tempo_execucao = 0
+
+
+def main():
+    imprimir_cabecalho()
+
+    processos_criados = fornecer_informacoes()
+
+    while True:
+        escolha_algoritmo = int(input(
+            "Escolha o algoritmo: [1=FCFS "
+            "2=SJF Preemptivo "
+            "3=SJF Não Preemptivo "
+            "4=Prioridade Preemptivo "
+            "5=Prioridadde Não Preemptivo "
+            "6=Round Robin "
+            "7=Imprime lista de processos "
+            "8=Popular processos novamente "
+            "9=Sair]: "
+        ))
+
+        if escolha_algoritmo == 1:
+            fcfs(processos_criados)
+        elif escolha_algoritmo == 7:
+            imprimir_processos(processos_criados)
+        elif escolha_algoritmo == 8:
+            processos_criados = fornecer_informacoes()
+        elif escolha_algoritmo == 9:
+            break
+
+
+if __name__ == "__main__":
+    main()
