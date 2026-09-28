@@ -14,7 +14,7 @@ import random
 
 MAXIMO_TEMPO_EXECUCAO = 65535
 
-n_processos = 2
+n_processos = 4
 
 
 def main():
