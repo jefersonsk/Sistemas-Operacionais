@@ -192,7 +192,8 @@ class GerenciadorDeFilas:
 
         return {"linha_do_tempo": linha_do_tempo,
                 "metricas_processos": historico,
-                "tempo_ocioso": tempo_ocioso}
+                "tempo_ocioso": tempo_ocioso
+                }
 
     def executar_prioridade_nao_preemptivo(self):
         historico = []
@@ -284,6 +285,70 @@ class GerenciadorDeFilas:
         return {"linha_do_tempo": linha_do_tempo,
                 "metricas_processos": historico,
                 "tempo_ocioso": tempo_ocioso}
+
+    def executar_round_robin(self, time_slice):
+        historico = []
+        linha_do_tempo = []
+        lista_chegada = sorted(
+            self.fila, key=lambda processo: processo.tempo_chegada
+        )
+        fila_prontos = []
+
+        while lista_chegada or fila_prontos:
+            while self.deve_processar(lista_chegada):
+                fila_prontos.append(lista_chegada.pop(0))
+
+            if fila_prontos:
+                processo_atual = fila_prontos.pop(0)
+
+                # Executa ciclo a ciclo respeitando a fatia de tempo (time_slice)
+                for _ in range(time_slice):
+                    # Registra 1 ciclo na linha do tempo usando a estrutura padrão
+                    linha_do_tempo.append(
+                        self.executar_ciclo_cpu(processo_atual))
+
+                    # Checa se novos processos chegaram durante este ciclo
+                    while self.deve_processar(lista_chegada):
+                        fila_prontos.append(lista_chegada.pop(0))
+
+                    # Se o processo terminou antes de esgotar a fatia de tempo, interrompe o turno
+                    if processo_atual.esta_finalizado():
+                        break
+
+                # 3. Reinsere no final da fila se ainda houver tempo restante 🔄
+                if processo_atual.tempo_restante > 0:
+                    fila_prontos.append(processo_atual)
+                # 4. Registra métricas se o processo finalizou 🏁
+                else:
+                    tempo_espera = (
+                        self.tempo_sistema -
+                        processo_atual.tempo_chegada -
+                        processo_atual.tempo_execucao
+                    )
+
+                    historico.append({
+                        "processo": processo_atual,
+                        "tempo_espera": tempo_espera
+                    })
+            else:
+                # CPU Ociosa 💤
+                self.tempo_sistema += 1
+                linha_do_tempo.append({
+                    "tempo": self.tempo_sistema,
+                    "processo": "ocioso",
+                    "restante": "-"
+                })
+
+        return {
+            "linha_do_tempo": linha_do_tempo,
+            "metricas_processos": historico
+        }
+
+    def deve_processar(self, lista_chegada):
+        return (
+            lista_chegada
+            and lista_chegada[0].tempo_chegada <= self.tempo_sistema
+        )
 
 
 def fornecer_informacoes():
@@ -414,6 +479,13 @@ def main():
         elif escolha_algoritmo == 5:
             executar_algoritmo(
                 GerenciadorDeFilas.executar_prioridade_nao_preemptivo,
+                processos_criados
+            )
+        elif escolha_algoritmo == 6:
+            time_slice = int(input("Digite o time-slice: "))
+
+            executar_algoritmo(
+                lambda aux: aux.executar_round_robin(time_slice),
                 processos_criados
             )
 
