@@ -301,24 +301,19 @@ class GerenciadorDeFilas:
             if fila_prontos:
                 processo_atual = fila_prontos.pop(0)
 
-                # Executa ciclo a ciclo respeitando a fatia de tempo (time_slice)
                 for _ in range(time_slice):
-                    # Registra 1 ciclo na linha do tempo usando a estrutura padrão
                     linha_do_tempo.append(
                         self.executar_ciclo_cpu(processo_atual))
 
-                    # Checa se novos processos chegaram durante este ciclo
                     while self.deve_processar(lista_chegada):
                         fila_prontos.append(lista_chegada.pop(0))
 
-                    # Se o processo terminou antes de esgotar a fatia de tempo, interrompe o turno
                     if processo_atual.esta_finalizado():
                         break
 
-                # 3. Reinsere no final da fila se ainda houver tempo restante 🔄
                 if processo_atual.tempo_restante > 0:
                     fila_prontos.append(processo_atual)
-                # 4. Registra métricas se o processo finalizou 🏁
+
                 else:
                     tempo_espera = (
                         self.tempo_sistema -
@@ -331,7 +326,6 @@ class GerenciadorDeFilas:
                         "tempo_espera": tempo_espera
                     })
             else:
-                # CPU Ociosa 💤
                 self.tempo_sistema += 1
                 linha_do_tempo.append({
                     "tempo": self.tempo_sistema,
