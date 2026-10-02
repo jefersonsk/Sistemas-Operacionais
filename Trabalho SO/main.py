@@ -289,60 +289,33 @@ class GerenciadorDeFilas:
     def executar_round_robin(self, time_slice):
         historico = []
         linha_do_tempo = []
-        lista_chegada = sorted(
-            self.fila, key=lambda processo: processo.tempo_chegada
-        )
-        fila_prontos = []
 
-        while lista_chegada or fila_prontos:
-            while self.deve_processar(lista_chegada):
-                fila_prontos.append(lista_chegada.pop(0))
+        while self.fila:
+            processo_atual = self.fila.pop(0)
 
-            if fila_prontos:
-                processo_atual = fila_prontos.pop(0)
+            for _ in range(time_slice):
+                linha_do_tempo.append(self.executar_ciclo_cpu(processo_atual))
 
-                for _ in range(time_slice):
-                    linha_do_tempo.append(
-                        self.executar_ciclo_cpu(processo_atual))
+                if processo_atual.esta_finalizado():
+                    break
 
-                    while self.deve_processar(lista_chegada):
-                        fila_prontos.append(lista_chegada.pop(0))
-
-                    if processo_atual.esta_finalizado():
-                        break
-
-                if processo_atual.tempo_restante > 0:
-                    fila_prontos.append(processo_atual)
-
-                else:
-                    tempo_espera = (
-                        self.tempo_sistema -
-                        processo_atual.tempo_chegada -
-                        processo_atual.tempo_execucao
-                    )
-
-                    historico.append({
-                        "processo": processo_atual,
-                        "tempo_espera": tempo_espera
-                    })
+            if processo_atual.tempo_restante > 0:
+                self.fila.append(processo_atual)
             else:
-                self.tempo_sistema += 1
-                linha_do_tempo.append({
-                    "tempo": self.tempo_sistema,
-                    "processo": "ocioso",
-                    "restante": "-"
+                tempo_espera = (
+                    self.tempo_sistema -
+                    processo_atual.tempo_execucao
+                )
+
+                historico.append({
+                    "processo": processo_atual,
+                    "tempo_espera": tempo_espera
                 })
 
         return {
             "linha_do_tempo": linha_do_tempo,
             "metricas_processos": historico
         }
-
-    def deve_processar(self, lista_chegada):
-        return (
-            lista_chegada
-            and lista_chegada[0].tempo_chegada <= self.tempo_sistema
-        )
 
 
 def fornecer_informacoes():
